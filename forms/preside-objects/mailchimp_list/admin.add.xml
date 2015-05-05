@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<form>
+	<tab id="mailchimp_list">
+		<fieldset id="mailchimp_list">
+			<field binding="mailchimp_list.member_count"      maxValue="9999999" />
+			<field binding="mailchimp_list.unsubscribe_count" maxValue="9999999" />
+		</fieldset>
+	</tab>
+
+</form>
