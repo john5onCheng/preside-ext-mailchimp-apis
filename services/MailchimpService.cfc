@@ -61,7 +61,7 @@ component output=false singleton=true {
 		return false;
 	}
 
-	public boolean function syncNewSubscriberToMailChimp( required struct user, any logger ) {
+	public boolean function setNewSubscriber( required struct user, any logger ) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canError        = loggerAvailable && arguments.logger.canError();
