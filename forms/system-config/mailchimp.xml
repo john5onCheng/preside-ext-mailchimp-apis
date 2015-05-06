@@ -3,7 +3,6 @@
 	<tab id="mailchimp" title="system-config.mailchimp:tab.title" description="system-config.mailchimp:tab.description">
 		<fieldset id="mailchimp">
 			<field name="api_key"               control="textinput"                            required="true"  label="system-config.mailchimp:api_key.label"               help="system-config.mailchimp:api_key.help"     />
-			<field name="subscriber_list"       control="objectpicker" object="mailchimp_list" required="false" label="system-config.mailchimp:subscriber_list.label"       help="system-config.mailchimp:subscriber_list.help"     />
 		</fieldset>
 	</tab>
 </form>

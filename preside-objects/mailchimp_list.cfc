@@ -1,6 +1,7 @@
 /**
-* @dataManagerGroup      mailchimp
-* @dataManagerGridFields label,mailchimp_list_id,member_count,unsubscribe_count,datecreated,datemodified
+* @dataManagerGroup             mailchimp
+* @dataManagerGridFields        label,mailchimp_list_id,member_count,unsubscribe_count,datecreated,datemodified
+* @datamanagerAllowedOperations none
 *
 */
 component output=false  {

@@ -15,7 +15,6 @@ component output=false singleton=true {
 		_setSysConfigService( arguments.sysConfigService  );
 		_setFullAPIKey();
 		_setAPIKey();
-		_setListID();
 		_setAPIDC();
 		_setAPIVersion();
 		_setServiceURL();
@@ -61,7 +60,7 @@ component output=false singleton=true {
 		return false;
 	}
 
-	public boolean function setNewSubscriber( required struct user, any logger ) {
+	public boolean function setNewSubscriber( required struct user, any logger, required any listID ) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canError        = loggerAvailable && arguments.logger.canError();
@@ -77,7 +76,7 @@ component output=false singleton=true {
 
 		http url ="#serviceURL#" method="post" name="list"{
 			httpparam name="apikey"                              value=_getAPIKey()        type="url";
-			httpparam name="id"                                  value=_getListID()        type="url";
+			httpparam name="id"                                  value=arguments.listID    type="url";
 			httpparam name="double_optin"                        value=false               type="url";
 			httpparam name="update_existing"                     value=true                type="url";
 			httpparam name="replace_interests"                   value=false               type="url";
@@ -89,7 +88,7 @@ component output=false singleton=true {
 		if( StructKeyExists(cfhttp,"errorDetail") && cfhttp.errorDetail != "" ){
 			if( canError ){
 				arguments.logger.error( "Error running method: #methodName#. Error statusCode: #cfhttp.error.statusCode#. Error detail: #cfhttp.error.errorDetail#" );
-				return arrayNew(1);
+				return false;
 			}
 		}
 
@@ -101,20 +100,20 @@ component output=false singleton=true {
 	}
 
 
-	public array function getUnsubscriberList( any logger ) {
+	public array function getUnsubscriberList( required string listID,  any logger ) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canInfo         = loggerAvailable && arguments.logger.canInfo();
 
 		var methodName      = "lists/members";
 
-		return  _getMailChimpData( methodName = methodName, logger = arguments.logger, status="unsubscribed" );
+		return  _getMailChimpData( methodName = methodName, logger = arguments.logger, args = { status="unsubscribed", id = arguments.listID } );
 	}
 
 
 // PRIVATE METHODS
 
-	private array function _getMailChimpData( required string methodName, any logger, any status ) {
+	private array function _getMailChimpData( required string methodName, any logger, struct args = {} ) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canError        = loggerAvailable && arguments.logger.canError();
@@ -126,8 +125,9 @@ component output=false singleton=true {
 
 		http url ="#serviceURL#" method="get" name="list"{
 			httpparam name="apikey" value=_getAPIKey()     type="url";
-			httpparam name="id"     value=_getListID()     type="url";
-			httpparam name="status" value=arguments.status type="url";
+			for( var key in arguments.args ){
+				httpparam name="#key#"     value=arguments.args[key] type="url";
+			}
 		}
 
 		if( StructKeyExists(cfhttp,"errorDetail") && cfhttp.errorDetail != "" ){
@@ -161,20 +161,6 @@ component output=false singleton=true {
 	}
 	private void function _setAPIKey() output=false {
 		_apiKey = listFirst(_getFullAPIKey(),'-');
-	}
-
-	private any function _getListID() output=false {
-		return _listID;
-	}
-	private void function _setListID() output=false {
-
-		var subscriberList = _getSysConfigService().getSetting('mailchimp','subscriber_list');
-		_listID            =  "";
-
-		if( subscriberList.len() ){
-		 	_listID =  _getMailchimpListDao().selectData( selectField = [ 'mailchimp_list_id' ], id = subscriberList).mailchimp_list_id;
-		}
-
 	}
 
 	private any function _getAPIDC() output=false {
