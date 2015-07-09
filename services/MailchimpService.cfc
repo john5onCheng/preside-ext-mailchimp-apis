@@ -87,14 +87,14 @@ component output=false singleton=true {
 
 		if( StructKeyExists(cfhttp,"errorDetail") && cfhttp.errorDetail != "" ){
 			if( canError ){
-				arguments.logger.error( "Error running method: #methodName#. Error statusCode: #cfhttp.error.statusCode#. Error detail: #cfhttp.error.errorDetail#" );
+				arguments.logger.error( "Error running method: #methodName#. Error [#SerializeJson( cfhttp.errorDetail )#]" );
 				return false;
 			}
 		}
 
 		var result = DeserializeJSON(cfhttp.filecontent);
 
-		if ( canInfo ) { arguments.logger.info( "Subscriber SET:  #result.email#" ); }
+		if ( canInfo ) { arguments.logger.info( "Subscriber SET to Mailchimp:  #result.email#" ); }
 
 		return true;
 	}
@@ -132,7 +132,7 @@ component output=false singleton=true {
 
 		if( StructKeyExists(cfhttp,"errorDetail") && cfhttp.errorDetail != "" ){
 			if( canError ){
-				arguments.logger.error( "Error running method: #methodName#. Error statusCode: #cfhttp.error.statusCode#. Error detail: #cfhttp.error.errorDetail#" );
+				arguments.logger.error( "Error running method: #methodName#. Error [#SerializeJson( cfhttp.errorDetail )#]" );
 				return arrayNew(1);
 			}
 		}
