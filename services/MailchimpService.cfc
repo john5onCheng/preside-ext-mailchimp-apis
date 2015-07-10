@@ -23,6 +23,11 @@ component output=false singleton=true {
 	}
 
 // PUBLIC API METHODS
+
+	/*
+	 * Method Name   : lists/list
+	 * Description   : Get all mailchimp lists and store in preside mailchimp_list object
+	 */
 	public boolean function syncMailchimpList( any logger ) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
@@ -60,7 +65,31 @@ component output=false singleton=true {
 		return false;
 	}
 
-	public boolean function setNewSubscriber( required struct user, any logger, required any listID ) {
+
+	/*
+	 * Method Name   : lists/subscribe
+	 * Description   : Subscribe the given email address from the list
+	 *
+	 * user              - Required. User's detail with email_address to subscribe
+	 * e.g. user { email_address: 'johnson.cheng@pixl8.co.uk',first_name : 'johnson', last_name : 'cheng'  }
+	 *
+	 * listID            - Required. The list id to connect to
+	 * emailType         - Optional. Email type preference for the email (html or text - defaults to html)
+	 * doubleOptIn       - Optional. Flag to control whether a double opt-in confirmation message is sent, defaults to true. Abusing this may cause your account to be suspended
+	 * updateExisting    - Optional. Flag to control whether existing subscribers should be updated instead of throwing an error
+	 * replaceInterests  - Optional. Flag to determine whether we replace the interest groups with the groups provided or we add the provided groups to the member's interest groups
+	 * sendWelcome       - Optional. If your doubleOptIn is false and this is true, we will send your lists Welcome Email if this subscribe succeeds - this will *not* fire if we end up updating an existing subscriber. If doubleOptIn is true, this has no effect
+	 */
+	public boolean function setNewSubscriber(
+	      required struct  user
+		, required any     listID
+		,          string  emailType        = "html"
+		,          boolean doubleOptIn      = false
+		,          boolean updateExisting   = true
+		,          boolean replaceInterests = false
+		,          boolean sendWelcome      = false
+		,          any     logger
+	) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canError        = loggerAvailable && arguments.logger.canError();
@@ -75,24 +104,27 @@ component output=false singleton=true {
 		var lastName        = arguments.user.last_name     ?: "";
 
 		http url ="#serviceURL#" method="post" name="list"{
-			httpparam name="apikey"                              value=_getAPIKey()        type="url";
-			httpparam name="id"                                  value=arguments.listID    type="url";
-			httpparam name="double_optin"                        value=false               type="url";
-			httpparam name="update_existing"                     value=true                type="url";
-			httpparam name="replace_interests"                   value=false               type="url";
-			httpparam name="email[email]"                        value="#emailAddress#"    type="formfield";
-			httpparam name="merge_vars[fname]"                   value="#firstName#"       type="formfield";
-			httpparam name="merge_vars[lname]"                   value="#lastName#"        type="formfield";
+			httpparam name="apikey"                              value=_getAPIKey()                 type="url";
+			httpparam name="id"                                  value=arguments.listID             type="url";
+			httpparam name="email[email]"                        value="#emailAddress#"             type="formfield";
+			httpparam name="merge_vars[fname]"                   value="#firstName#"                type="formfield";
+			httpparam name="merge_vars[lname]"                   value="#lastName#"                 type="formfield";
+			httpparam name="email_type"                          value='#arguments.emailType#'      type="url";
+			httpparam name="double_optin"                        value=arguments.doubleOptIn        type="url";
+			httpparam name="update_existing"                     value=arguments.updateExisting     type="url";
+			httpparam name="replace_interests"                   value=arguments.replaceInterests   type="url";
+			httpparam name="send_welcome"                        value=arguments.sendWelcome        type="url";
 		}
+
+		var result = DeserializeJSON(cfhttp.filecontent);
 
 		if( StructKeyExists(cfhttp,"errorDetail") && cfhttp.errorDetail != "" ){
 			if( canError ){
-				arguments.logger.error( "Error running method: #methodName#. Error [#SerializeJson( cfhttp.errorDetail )#]" );
+				arguments.logger.error( "Error running method: #methodName#. Error [#SerializeJson( result.error )#]" );
 				return false;
 			}
 		}
 
-		var result = DeserializeJSON(cfhttp.filecontent);
 
 		if ( canInfo ) { arguments.logger.info( "Subscriber SET to Mailchimp:  #result.email#" ); }
 
@@ -100,6 +132,72 @@ component output=false singleton=true {
 	}
 
 
+	/*
+	 * Method Name   : lists/unsubscribe
+	 * Description   : Unsubscribe or remove the given email address from the list
+	 *
+	 * email         - Required. Email to unsubscribe
+	 * listID        - Required. The list id to connect to
+	 * sendGoodbye   - Optional. Flag to send the goodbye email to the email address
+	 * sendNotify    - Optional. Flag to send the unsubscribe notification email to the address defined in the list email notification settings
+	 * deleteMember  - Optional. Flag to completely delete the member from your list instead of just unsubscribing
+	 */
+	public boolean function setUnsubscriber(
+		  required string  email
+		, required any     listID
+		,          boolean deleteMember = false
+		,          boolean sendGoodbye  = false
+		,          boolean sendNotify   = false
+		,          any     logger
+	) {
+
+		var loggerAvailable = StructKeyExists( arguments, "logger" );
+		var canError        = loggerAvailable && arguments.logger.canError();
+		var canInfo         = loggerAvailable && arguments.logger.canInfo();
+
+		var methodName      = "lists/unsubscribe";
+
+		var serviceURL      = _getServiceURL() & methodName;
+
+		var emailAddress    = arguments.email ?: "";
+
+		http url ="#serviceURL#" method="post" name="list"{
+			httpparam name="apikey"             value=_getAPIKey()           type="url";
+			httpparam name="id"                 value=arguments.listID       type="url";
+			httpparam name="email[email]"       value="#emailAddress#"       type="formfield";
+			httpparam name="delete_member"      value=arguments.deleteMember type="url";
+			httpparam name="send_goodbye"       value=arguments.sendGoodbye  type="url";
+			httpparam name="send_notify"        value=arguments.sendNotify   type="url";
+		}
+
+		var result = DeserializeJSON(cfhttp.filecontent);
+
+		if( StructKeyExists(cfhttp,"errorDetail") && cfhttp.errorDetail != "" ){
+			if( canError ){
+				arguments.logger.error( "Error running method: #methodName#. Error [#SerializeJson( result.error )#]" );
+				return false;
+			}
+		}
+
+		if ( canInfo ) {
+			var otherOptionalField = "Send Goodbye : #arguments.sendGoodbye#, Send Notify: #arguments.sendNotify#";
+			if( arguments.deleteMember ){
+				arguments.logger.info( "Remove subscriber #emailAddress# from Mailchimp list status:  #result.complete#, #otherOptionalField# " );
+			}else{
+				arguments.logger.info( "Unsubscribe #emailAddress# from Mailchimp list status:  #result.complete#, #otherOptionalField# " );
+			}
+		}
+
+		return true;
+	}
+
+
+	/*
+	 * Method Name   : lists/members
+	 * Description   : Get all unsubscriber from list
+	 *
+	 * listID        - Required. The list id to connect to
+	 */
 	public array function getUnsubscriberList( required string listID,  any logger ) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
@@ -112,7 +210,6 @@ component output=false singleton=true {
 
 
 // PRIVATE METHODS
-
 	private array function _getMailChimpData( required string methodName, any logger, struct args = {} ) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
@@ -130,14 +227,16 @@ component output=false singleton=true {
 			}
 		}
 
+		var result = DeserializeJSON(cfhttp.filecontent);
+
 		if( StructKeyExists(cfhttp,"errorDetail") && cfhttp.errorDetail != "" ){
 			if( canError ){
-				arguments.logger.error( "Error running method: #methodName#. Error [#SerializeJson( cfhttp.errorDetail )#]" );
+				arguments.logger.error( "Error running method: #methodName#. Error [#SerializeJson( result.error )#]" );
 				return arrayNew(1);
 			}
 		}
 
-		return DeserializeJSON(cfhttp.filecontent).data;
+		return result.data;
 	}
 
 
