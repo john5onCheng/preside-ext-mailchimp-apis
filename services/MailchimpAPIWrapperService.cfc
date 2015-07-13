@@ -148,6 +148,16 @@ component output=false singleton=true {
 		return result;
 	}
 
+	private void function _throw(
+		  string type      = "MailchimpApiWrapper.unknown"
+		, string message   = ""
+		, string detail    = ""
+		, string errorCode = ""
+	) output=false {
+
+		throw( type=arguments.type, message=arguments.message, detail=arguments.detail, errorcode=arguments.errorCode );
+	}
+
 
 // GETTERS AND SETTERS
 	private string function _getCharset() output=false {
