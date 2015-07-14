@@ -20,7 +20,7 @@ component output=false singleton=true {
 // PUBLIC API METHODS
 
 	/*
-	 * Description   : Get all mailchimp lists and store in preside mailchimp_list object
+	 * Description   : GET all mailchimp lists and store in preside mailchimp_list object
 	 */
 	public boolean function getAllListsToPreside( any logger ) {
 
@@ -72,6 +72,35 @@ component output=false singleton=true {
 	}
 
 	/*
+	 * Description   : GET Member from list
+	 */
+	public array function getMemberFromList( required string listID, string status,  struct option,  any logger ) {
+
+		var loggerAvailable = StructKeyExists( arguments, "logger" );
+		var canInfo         = loggerAvailable && arguments.logger.canInfo();
+		var canError        = loggerAvailable && arguments.logger.canError();
+
+		var result          = _getMailchimpAPIWrapperService().listsMembers(
+								  id          = arguments.listID
+								, status      = arguments.status
+								, opts        = arguments.option
+							);
+
+		var resultContent    = _processResult( result = result , logger = arguments.logger);
+
+		if( StructKeyExists(result,"errorDetail") && result.errorDetail != "" ){
+			if( canError ){
+				arguments.logger.error( "Error processing setSubscriber method. Error [#SerializeJson(resultContent.error)#]" );
+			}
+			return arrayNew();
+		}
+
+		return resultContent.data;
+
+	}
+
+
+	/*
 	 * Description   : SET subscriber to list
 	 */
 	public boolean function setSubscriber(
@@ -118,6 +147,10 @@ component output=false singleton=true {
 		return true;
 	}
 
+
+	/*
+	 * Description   : SET unsubscriber to list
+	 */
 	public boolean function setUnsubscriber(
 		  required struct  email
 		, required any     listID
@@ -159,6 +192,7 @@ component output=false singleton=true {
 
 		return true;
 	}
+
 
 // PRIVATE METHODS
 

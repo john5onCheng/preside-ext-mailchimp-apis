@@ -96,17 +96,19 @@ component output=false singleton=true {
 
 
 // PRIVATE METHODS
+	private string function _convertArgumentsToUri(
+		required struct data
+	) output=false {
 
-	private string  function _convertArgumentsToUri( required struct argumentStruct ) {
-		var uri = "";
+		var urlData = "";
 
-		for( var key in arguments.argumentStruct ){
-			if( !isNull(arguments.argumentStruct[key]) ) {
-				uri = '&#body[key]#=arguments.argumentStruct[key]';
+		for( var key in arguments.data ){
+			if( !isNull( arguments.data[key] ) ) {
+				urlData &="&#key#=#arguments.data[key]#";
 			}
 		}
 
-		return uri;
+		return  urlData;
 	}
 
 
