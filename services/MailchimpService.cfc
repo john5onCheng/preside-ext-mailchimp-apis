@@ -178,6 +178,11 @@ component output=false singleton=true {
 			if( canError ){
 				arguments.logger.error( "Error processing setUnsubscriber method. Error [#SerializeJson(resultContent.error)#]" );
 			}
+
+			if( resultContent.name EQ 'Email_NotExists' ){
+				return true;
+			}
+
 			return false;
 		}
 
