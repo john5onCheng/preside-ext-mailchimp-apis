@@ -1,4 +1,4 @@
-component output=false singleton=true {
+component singleton=true {
 
 // CONSTRUCTOR
 	/**
@@ -6,10 +6,9 @@ component output=false singleton=true {
 	 *
 	 */
 
-
 	public any function init(
 		  required any systemConfigurationService
-	 ) output=false {
+	 ) {
 		_setSystemConfigurationService( arguments.systemConfigurationService  );
 
 		return this;
@@ -23,18 +22,18 @@ component output=false singleton=true {
 	 * Dcoumentation : https://apidocs.mailchimp.com/api/2.0/lists/list.php
 	 */
 	public struct function listsList(
-		           struct  filters
-		,          numeric start
-		,          numeric limit
-		,          string  sort_field
-		,          string  sort_dir
+		  struct  filters
+		, numeric start
+		, numeric limit
+		, string  sort_field
+		, string  sort_dir
 	) {
 		var uri = "?apikey=" & _getAPIkey() & _convertArgumentsToUri( arguments );
 
 		return _call(
-						  uri    = "lists/list" & uri
-						, method = "GET"
-					 );
+			  uri    = "lists/list" & uri
+			, method = "GET"
+		 );
 	}
 
 	/*
@@ -43,16 +42,16 @@ component output=false singleton=true {
 	 * Dcoumentation : https://apidocs.mailchimp.com/api/2.0/lists/members.php
 	 */
 	public struct function listsMembers(
-		 required string  id
-	   ,          string  status
-	   ,          struct  opts
+		  required string  id
+		,          string  status
+		,          struct  opts
 	) {
 		var uri = "?apikey=" & _getAPIkey() & _convertArgumentsToUri( arguments );
 
 		return _call(
-						  uri    = "lists/members" & uri
-						, method = "GET"
-					 );
+			  uri    = "lists/members" & uri
+			, method = "GET"
+		 );
 	}
 
 
@@ -62,18 +61,18 @@ component output=false singleton=true {
 	 * Dcoumentation : https://apidocs.mailchimp.com/api/2.0/lists/subscribe.php
 	 */
 	public struct function listsSubscribe(
-	        required string  id
-	      , required struct  email
-	      ,          struct  merge_vars
-	      ,          string  email_type
-	      ,          string  double_optin
-	      ,          boolean update_existing
-	      ,          boolean replace_interests
-	      ,          boolean send_welcome
+		  required string  id
+		, required struct  email
+		,          struct  merge_vars
+		,          string  email_type
+		,          string  double_optin
+		,          boolean update_existing
+		,          boolean replace_interests
+		,          boolean send_welcome
 	) {
 		arguments.apikey = _getAPIkey();
 
-		return _call( uri = "lists/subscribe", method="POST",  body = SerializeJson(arguments) );;
+		return _call( uri = "lists/subscribe", method="POST",  body = SerializeJson( arguments ) );
 	}
 
 
@@ -83,22 +82,56 @@ component output=false singleton=true {
 	 * Dcoumentation : https://apidocs.mailchimp.com/api/2.0/lists/subscribe.php
 	 */
 	public struct function listsUnsubscribe(
-	        required string  id
-	      , required struct  email
-	      ,          boolean delete_member
-	      ,          boolean send_goodbye
-	      ,          boolean send_notify
+		  required string  id
+		, required struct  email
+		,          boolean delete_member
+		,          boolean send_goodbye
+		,          boolean send_notify
 	) {
 		arguments.apikey = _getAPIkey();
 
-		return _call( uri = "lists/unsubscribe", method="POST",  body = SerializeJson(arguments) );;
+		return _call( uri = "lists/unsubscribe", method="POST",  body = SerializeJson( arguments ) );
+	}
+
+	/*
+	 * Method Name   : lists/batch-subscribe
+	 * Description   : Subscribe a batch of email addresses to a list at once
+	 * Dcoumentation : https://apidocs.mailchimp.com/api/2.0/lists/batch-subscribe.php
+	 */
+	public struct function listsBatchSubscribe(
+		  required string  id
+		, required array   batch
+		,          string  double_optin
+		,          boolean update_existing
+		,          boolean replace_interests
+	) {
+		arguments.apikey = _getAPIkey();
+
+		return _call( uri = "lists/batch-subscribe", method="POST",  body = SerializeJson( arguments ) );
+	}
+
+	/*
+	 * Method Name   : lists/batch-unsubscribe
+	 * Description   : Unsubscribe a batch of email addresses from a list
+	 * Dcoumentation : https://apidocs.mailchimp.com/api/2.0/lists/batch-unsubscribe.php
+	 */
+	public struct function listsBatchUnsubscribe(
+		  required string  id
+		, required array   batch
+		,          boolean delete_member
+		,          boolean send_goodbye
+		,          boolean send_notify
+	) {
+		arguments.apikey = _getAPIkey();
+
+		return _call( uri = "lists/batch-unsubscribe", method="POST",  body = SerializeJson( arguments ) );
 	}
 
 
 // PRIVATE METHODS
 	private string function _convertArgumentsToUri(
 		required struct data
-	) output=false {
+	) {
 
 		var urlData = "";
 
@@ -112,7 +145,7 @@ component output=false singleton=true {
 	}
 
 
-	private any function _call( required string method, required string uri, string body ) output=false {
+	private any function _call( required string method, required string uri, string body ) {
 		var result        = "";
 		var success       = false;
 		var attempts      = 0;
@@ -155,43 +188,43 @@ component output=false singleton=true {
 		, string message   = ""
 		, string detail    = ""
 		, string errorCode = ""
-	) output=false {
+	) {
 
 		throw( type=arguments.type, message=arguments.message, detail=arguments.detail, errorcode=arguments.errorCode );
 	}
 
 
 // GETTERS AND SETTERS
-	private string function _getCharset() output=false {
+	private string function _getCharset() {
 		return _getSystemConfigurationService().getSetting( "elasticsearch", "charset", "UTF-8" );
 	}
 
-	private string function _getAPIkey() output=false {
+	private string function _getAPIkey() {
 		return listFirst(_getFullAPIKey(),'-');
 	}
 
-	private string function _getFullAPIkey() output=false {
+	private string function _getFullAPIkey() {
 		return _getSystemConfigurationService().getSetting('mailchimp','api_key');
 	}
 
-	private string function _getAPIEndpoint() output=false {
+	private string function _getAPIEndpoint() {
 		var apiVersion = _getSystemConfigurationService().getSetting('mailchimp','api_version','2.0');
 		var apiDC      = listLast(_getFullAPIKey(),'-');
 		return  "https://#apiDC#.api.mailchimp.com/#apiVersion#/";
 	}
 
-	private any function _getSystemConfigurationService() output=false {
+	private any function _getSystemConfigurationService() {
 		return _systemConfigurationService;
 	}
-	private void function _setSystemConfigurationService( required any systemConfigurationService ) output=false {
+	private void function _setSystemConfigurationService( required any systemConfigurationService ) {
 		_systemConfigurationService = arguments.systemConfigurationService;
 	}
 
-	private numeric function _getRequestTimeoutInSeconds() output=false {
+	private numeric function _getRequestTimeoutInSeconds() {
 		return _getSystemConfigurationService().getSetting( "mailchimp", "api_call_timeout", 30 );
 	}
 
-	private numeric function _getNullResponseRetryAttempts() output=false {
+	private numeric function _getNullResponseRetryAttempts() {
 		return _getSystemConfigurationService().getSetting( "mailchimp", "retry_attempts", 3 );
 	}
 

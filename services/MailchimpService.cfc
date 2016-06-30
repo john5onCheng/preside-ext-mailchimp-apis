@@ -1,4 +1,4 @@
-component output=false singleton=true {
+component singleton=true {
 
 // CONSTRUCTOR
 	/**
@@ -10,7 +10,7 @@ component output=false singleton=true {
 	public any function init(
 		  required any mailchimpAPIWrapperService
 		, required any mailchimpListDao
-	 ) output=false {
+	 ) {
 		_setMailchimpListDao(    arguments.mailchimpListDao     );
 		_setMailchimpAPIWrapperService( arguments.mailchimpAPIWrapperService  );
 
@@ -81,10 +81,10 @@ component output=false singleton=true {
 		var canError        = loggerAvailable && arguments.logger.canError();
 
 		var result          = _getMailchimpAPIWrapperService().listsMembers(
-								  id          = arguments.listID
-								, status      = arguments.status
-								, opts        = arguments.option
-							);
+			  id          = arguments.listID
+			, status      = arguments.status
+			, opts        = arguments.option
+		);
 
 		var resultContent    = _processResult( result = result , logger = arguments.logger);
 
@@ -120,15 +120,15 @@ component output=false singleton=true {
 		var canError        = loggerAvailable && arguments.logger.canError();
 
 		var result          = _getMailchimpAPIWrapperService().listsSubscribe(
-								  id                = arguments.listID
-								, email             = arguments.email
-								, merge_vars        = arguments.mergeVars
-								, email_type        = arguments.emailType
-								, double_optin      = arguments.doubleOptIn
-								, update_existing   = arguments.updateExisting
-								, replace_interests = arguments.replaceInterests
-								, send_welcome      = arguments.sendWelcome
-							);
+			  id                = arguments.listID
+			, email             = arguments.email
+			, merge_vars        = arguments.mergeVars
+			, email_type        = arguments.emailType
+			, double_optin      = arguments.doubleOptIn
+			, update_existing   = arguments.updateExisting
+			, replace_interests = arguments.replaceInterests
+			, send_welcome      = arguments.sendWelcome
+		);
 
 		var resultContent    = _processResult( result = result , logger = arguments.logger);
 
@@ -165,12 +165,12 @@ component output=false singleton=true {
 		var canError        = loggerAvailable && arguments.logger.canError();
 
 		var result          = _getMailchimpAPIWrapperService().listsUnsubscribe(
-								  id               = arguments.listID
-								, email            = arguments.email
-								, delete_member    = arguments.deleteMember
-								, send_goodbye     = arguments.sendGoodbye
-								, send_notify      = arguments.sendNotify
-							);
+			  id               = arguments.listID
+			, email            = arguments.email
+			, delete_member    = arguments.deleteMember
+			, send_goodbye     = arguments.sendGoodbye
+			, send_notify      = arguments.sendNotify
+		);
 
 		var resultContent    = _processResult( result = result , logger = arguments.logger);
 
@@ -198,10 +198,84 @@ component output=false singleton=true {
 		return true;
 	}
 
+	/*
+	 * Description   : SET batch Subscriber to list
+	 */
+	public boolean function setBatchSubscriber(
+		  required array   batch
+		, required any     listID
+		,          boolean doubleOptIn      = false
+		,          boolean updateExisting   = true
+		,          boolean replaceInterests = false
+		,          any     logger
+	) {
+
+		var loggerAvailable = StructKeyExists( arguments, "logger" );
+		var canInfo         = loggerAvailable && arguments.logger.canInfo();
+		var canError        = loggerAvailable && arguments.logger.canError();
+
+		var result          = _getMailchimpAPIWrapperService().listsBatchSubscribe(
+			  id                = arguments.listID
+			, batch             = arguments.batch
+			, double_optin      = arguments.doubleOptIn
+			, update_existing   = arguments.updateExisting
+			, replace_interests = arguments.replaceInterests
+		);
+
+		var resultContent    = _processResult( result = result , logger = arguments.logger);
+
+		if( StructKeyExists(result,"errorDetail") && result.errorDetail != "" ){
+			if( canError ){
+				arguments.logger.error( "Error processing setBatchSubscriber method. Error [#SerializeJson(resultContent.error)#]" );
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+
+	/*
+	 * Description   : SET batch unsubscriber to list
+	 */
+	public boolean function setBatchUnsubscriber(
+		  required array   batch
+		, required any     listID
+		,          boolean deleteMember = false
+		,          boolean sendGoodbye  = false
+		,          boolean sendNotify   = false
+		,          any     logger
+	) {
+
+		var loggerAvailable = StructKeyExists( arguments, "logger" );
+		var canInfo         = loggerAvailable && arguments.logger.canInfo();
+		var canError        = loggerAvailable && arguments.logger.canError();
+
+		var result          = _getMailchimpAPIWrapperService().listsBatchUnsubscribe(
+			  id               = arguments.listID
+			, batch            = arguments.batch
+			, delete_member    = arguments.deleteMember
+			, send_goodbye     = arguments.sendGoodbye
+			, send_notify      = arguments.sendNotify
+		);
+
+		var resultContent    = _processResult( result = result , logger = arguments.logger);
+
+		if( StructKeyExists(result,"errorDetail") && result.errorDetail != "" ){
+			if( canError ){
+				arguments.logger.error( "Error processing setBatchUnsubscriber method. Error [#SerializeJson(resultContent.error)#]" );
+			}
+
+			return false;
+		}
+
+		return true;
+	}
+
 
 // PRIVATE METHODS
 
-	private any function _processResult( required struct result, any logger ) output=false {
+	private any function _processResult( required struct result, any logger ) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canInfo         = loggerAvailable && arguments.logger.canInfo();
@@ -225,17 +299,17 @@ component output=false singleton=true {
 
 
 // GETTERS AND SETTERS
-	private any function _getMailchimpListDao() output=false {
+	private any function _getMailchimpListDao() {
 		return _mailchimpListDao;
 	}
-	private void function _setMailchimpListDao( required any mailchimpListDao ) output=false {
+	private void function _setMailchimpListDao( required any mailchimpListDao ) {
 		_mailchimpListDao = arguments.mailchimpListDao;
 	}
 
-	private any function _getMailchimpAPIWrapperService() output=false {
+	private any function _getMailchimpAPIWrapperService() {
 		return _mailchimpAPIWrapperService;
 	}
-	private void function _setMailchimpAPIWrapperService( required any mailchimpAPIWrapperService ) output=false {
+	private void function _setMailchimpAPIWrapperService( required any mailchimpAPIWrapperService ) {
 		_mailchimpAPIWrapperService = arguments.mailchimpAPIWrapperService;
 	}
 
