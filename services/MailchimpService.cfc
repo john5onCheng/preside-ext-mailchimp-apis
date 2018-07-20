@@ -1,17 +1,23 @@
-component singleton=true {
+/**
+* @singleton
+*/
+component  {
 
 // CONSTRUCTOR
 	/**
-	 * @mailchimpAPIWrapperService.inject  mailchimpAPIWrapperService
-	 * @mailchimpListDao.inject     presidecms:object:mailchimp_list
+	 * @mailchimpAPIWrapperService.inject mailchimpAPIWrapperService3
+	 * @mailchimpService.inject           mailchimpService3
+	 * @mailchimpListDao.inject           presidecms:object:mailchimp_list
 	 */
 
 
 	public any function init(
 		  required any mailchimpAPIWrapperService
+		, required any mailchimpService
 		, required any mailchimpListDao
 	 ) {
-		_setMailchimpListDao(    arguments.mailchimpListDao     );
+		_setMailchimpListDao(           arguments.mailchimpListDao            );
+		_setMailchimpService(           arguments.mailchimpService            );
 		_setMailchimpAPIWrapperService( arguments.mailchimpAPIWrapperService  );
 
 		return this;
@@ -19,144 +25,80 @@ component singleton=true {
 
 // PUBLIC API METHODS
 
-	/*
-	 * Description   : GET all mailchimp lists and store in preside mailchimp_list object
-	 */
 	public boolean function getAllListsToPreside( any logger ) {
-
-		var loggerAvailable = StructKeyExists( arguments, "logger" );
-		var canInfo         = loggerAvailable && arguments.logger.canInfo();
-		var canError        = loggerAvailable && arguments.logger.canError();
-
-		var resultData      = [];
-		var result          = _getMailchimpAPIWrapperService().listsList();
-		var resultContent   = _processResult( result = result , logger = arguments.logger);
-
-		if( StructKeyExists(result,"errorDetail") && result.errorDetail != "" ){
-			if( canError ){
-				arguments.logger.error( "Error processing getAllListsToPreside method. Error [#SerializeJson(resultContent.error)#]" );
-			}
-			return false;
-		}
-
-		if( structKeyExists( resultContent, "data" ) ){
-			resultData      = resultContent.data;
-		}
-
-		if( arrayLen( resultData ) ){
-			var itemData        = "";
-			loop array="#resultData#" item="itemData"{
-				var mailChimpData = {
-					  id                  = itemData.id
-					, web_id              = itemData.web_id
-					, label               = itemData.name
-					, member_count        = itemData.stats.member_count
-					, unsubscribe_count   = itemData.stats.unsubscribe_count
-				}
-
-				if( !_getMailchimpListDao().dataExists( filter={ web_id = itemData.web_id } ) ){
-					 _getMailchimpListDao().insertData( mailChimpData );
-					 if ( canInfo ) { arguments.logger.info( "Added list (id: #itemData.id# ) #itemData.name# to preside" ); }
-				}else{
-					 _getMailchimpListDao().updateData( filter= { web_id = itemData.web_id  } , data = mailChimpData );
-					 if ( canInfo ) { arguments.logger.info( "Updated list (id: #itemData.id# ) #itemData.name# to preside" ); }
-				}
-			}
-
-			if ( canInfo ) { arguments.logger.info( "GET all mailchimp lists to preside completed" ); }
-
-			return true;
-		}
-
-		return false;
+		return _getMailchimpService().getAllListsToPreside( logger );
 	}
 
-	/*
-	 * Description   : GET Member from list
-	 */
-	public array function getMemberFromList( required string listID, string status,  struct option,  any logger ) {
-
-		var loggerAvailable = StructKeyExists( arguments, "logger" );
-		var canInfo         = loggerAvailable && arguments.logger.canInfo();
-		var canError        = loggerAvailable && arguments.logger.canError();
-
-		var result          = _getMailchimpAPIWrapperService().listsMembers(
-			  id          = arguments.listID
-			, status      = arguments.status
-			, opts        = arguments.option
-		);
-
-		var resultContent    = _processResult( result = result , logger = arguments.logger);
-
-		if( StructKeyExists(result,"errorDetail") && result.errorDetail != "" ){
-			if( canError ){
-				arguments.logger.error( "Error processing setSubscriber method. Error [#SerializeJson(resultContent.error)#]" );
+	public array function getMemberFromList( required string listID, string status,  any logger ) {
+		var members = _getMailchimpService().getListMembers( listID=arguments.listID, status=arguments.status, exclude_fields="members._links,members.list_id", logger=arguments.logger );
+		if( arrayLen( members ) ) {
+			for( var member in members ){
+				member['email'] = member['email_address'] ?: "";
+				structDelete( member, "email_address" );
 			}
-			return arrayNew();
 		}
-
-		return resultContent.data;
-
+		return members;
 	}
 
-
-	/*
-	 * Description   : SET subscriber to list
-	 */
 	public boolean function setSubscriber(
 	      required struct  email
 		, required string  listID
 	    ,          struct  mergeVars
 		,          string  emailType        = "html"
-		,          boolean doubleOptIn      = false
 		,          boolean updateExisting   = true
-		,          boolean replaceInterests = false
-		,          boolean sendWelcome      = false
 		,          any     logger
 	) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canInfo         = loggerAvailable && arguments.logger.canInfo();
 		var canError        = loggerAvailable && arguments.logger.canError();
+		var mergeVarsUCase  = {};
 
-		var result          = _getMailchimpAPIWrapperService().listsSubscribe(
-			  id                = arguments.listID
-			, email             = arguments.email
-			, merge_vars        = arguments.mergeVars
-			, email_type        = arguments.emailType
-			, double_optin      = arguments.doubleOptIn
-			, update_existing   = arguments.updateExisting
-			, replace_interests = arguments.replaceInterests
-			, send_welcome      = arguments.sendWelcome
+		var members = {
+			  status        = "subscribed"
+			, email_address = arguments.email.email
+			, email_type    = arguments.emailType
+		}
+
+		if( !structIsEmpty( arguments.mergeVars ) ){
+			for( var mVar in arguments.mergeVars ){
+				mergeVarsUCase[ UCase( mVar ) ] = arguments.mergeVars[mVar];
+			}
+			members.merge_fields = mergeVarsUCase;
+		}
+
+		var result = _getMailchimpAPIWrapperService().batchSubscribeUnsubscribeListMember(
+			  list_id         = arguments.listID
+			, members         = [ members ]
+			, update_existing = arguments.updateExisting
 		);
 
-		var resultContent    = _processResult( result = result , logger = arguments.logger);
+		var resultContent     = _processResult( result=result , logger=arguments.logger );
 
-		if( StructKeyExists(result,"errorDetail") && result.errorDetail != "" ){
+		if( StructKeyExists( result,"errorDetail") && result.errorDetail != "" ){
 			if( canError ){
-				arguments.logger.error( "Error processing setSubscriber method. Error [#SerializeJson(resultContent.error)#]" );
+				arguments.logger.error( "Error: [#SerializeJson(resultContent)#]" );
 			}
 			return false;
 		}
 
-		if ( canInfo ) {
-			var otherOptionalField = "Double Opt-In : #arguments.doubleOptIn#, Update Existing: #arguments.updateExisting#, Replace Interests = #arguments.replaceInterests#, Send Welcome = #arguments.sendWelcome#";
-			arguments.logger.info( "SET Subscriber to Mailchimp:  #resultContent.email# completed. #otherOptionalField#" );
+		var success = ( resultContent.total_updated ?: 0 ) + ( resultContent.total_created ?: 0 );
+
+		if ( canInfo && success ) {
+			arguments.logger.info( "Subscribed #arguments.email.email# to mailchimp" );
 		}
 
-		return true;
+		if ( canError && arraylen( resultContent.errors ?: [] ) ) {
+			arguments.logger.error( "#SerializeJson( resultContent.errors )#" );
+		}
+
+		return success;
 	}
 
-
-	/*
-	 * Description   : SET unsubscriber to list
-	 */
 	public boolean function setUnsubscriber(
 		  required struct  email
 		, required any     listID
 		,          boolean deleteMember = false
-		,          boolean sendGoodbye  = false
-		,          boolean sendNotify   = false
 		,          any     logger
 	) {
 
@@ -164,49 +106,70 @@ component singleton=true {
 		var canInfo         = loggerAvailable && arguments.logger.canInfo();
 		var canError        = loggerAvailable && arguments.logger.canError();
 
-		var result          = _getMailchimpAPIWrapperService().listsUnsubscribe(
-			  id               = arguments.listID
-			, email            = arguments.email
-			, delete_member    = arguments.deleteMember
-			, send_goodbye     = arguments.sendGoodbye
-			, send_notify      = arguments.sendNotify
-		);
+		if( !arguments.deleteMember ){
 
-		var resultContent    = _processResult( result = result , logger = arguments.logger);
-
-		if( StructKeyExists(result,"errorDetail") && result.errorDetail != "" ){
-			if( canError ){
-				arguments.logger.error( "Error processing setUnsubscriber method. Error [#SerializeJson(resultContent.error)#]" );
+			var members = {
+				  status        = "unsubscribed"
+				, email_address = arguments.email.email
 			}
 
-			if( resultContent.name EQ 'Email_NotExists' ){
+			var result = _getMailchimpAPIWrapperService().batchSubscribeUnsubscribeListMember(
+				  list_id         = arguments.listID
+				, members         = [ members ]
+				, update_existing = true
+			);
+
+			var resultContent     = _processResult( result=result , logger=arguments.logger );
+
+			if( StructKeyExists( result,"errorDetail") && result.errorDetail != "" ){
+				if( canError ){
+					arguments.logger.error( "Error: [#SerializeJson(resultContent)#]" );
+				}
+				return false;
+			}
+
+			var success = ( resultContent.total_updated ?: 0 ) + ( resultContent.total_created ?: 0 );
+
+			if ( canInfo && success ) {
+				arguments.logger.info( "Unsubscribed #arguments.email.email# to mailchimp" );
+			}
+
+			if ( canError && arraylen( resultContent.errors ?: [] ) ) {
+				arguments.logger.error( "#SerializeJson( resultContent.errors )#" );
+			}
+
+			return success;
+
+		} else {
+
+			var result = _getMailchimpAPIWrapperService().deleteListMember(
+				  list_id         = arguments.listID
+				, subscriber_hash = hash( arguments.email.email )
+			);
+
+			var resultContent = _processResult( result=result , logger=arguments.logger );
+
+			if( StructKeyExists( result,"errorDetail") && result.errorDetail != "" ){
+				if( canError ){
+					arguments.logger.error( "Error: [#SerializeJson(resultContent)#]" );
+				}
+				return false;
+			}
+
+			if ( canInfo && isEmpty( resultContent ) ) {
+				arguments.logger.info( "Removed #arguments.email.email# from mailchimp" );
 				return true;
 			}
 
 			return false;
 		}
 
-		if ( canInfo ) {
-			var otherOptionalField = "Send Goodbye : #arguments.sendGoodbye#, Send Notify: #arguments.sendNotify#";
-			if( arguments.deleteMember ){
-				arguments.logger.info( "Remove subscriber #SerializeJson(arguments.email)# from Mailchimp list status:  #resultContent.complete#, #otherOptionalField# " );
-			}else{
-				arguments.logger.info( "Unsubscribe #SerializeJson(arguments.email)# from Mailchimp list status:  #resultContent.complete#, #otherOptionalField# " );
-			}
-		}
-
-		return true;
 	}
 
-	/*
-	 * Description   : SET batch Subscriber to list
-	 */
 	public boolean function setBatchSubscriber(
 		  required array   batch
 		, required any     listID
-		,          boolean doubleOptIn      = false
-		,          boolean updateExisting   = true
-		,          boolean replaceInterests = false
+		,          boolean updateExisting = true
 		,          any     logger
 	) {
 
@@ -214,12 +177,29 @@ component singleton=true {
 		var canInfo         = loggerAvailable && arguments.logger.canInfo();
 		var canError        = loggerAvailable && arguments.logger.canError();
 
-		var result          = _getMailchimpAPIWrapperService().listsBatchSubscribe(
-			  id                = arguments.listID
-			, batch             = arguments.batch
-			, double_optin      = arguments.doubleOptIn
-			, update_existing   = arguments.updateExisting
-			, replace_interests = arguments.replaceInterests
+		var refinedMembers = [];
+
+		for( var member in arguments.batch ){
+			var mergeVarsUCase = {};
+			var refinedMember  = {
+				  status        = "subscribed"
+				, email_address = member.email.email
+			}
+
+			if( !structIsEmpty( member.merge_vars ) ){
+				for( var mVar in member.merge_vars ){
+					mergeVarsUCase[ UCase( mVar ) ] = member.merge_vars[mVar];
+				}
+				refinedMember.merge_fields = mergeVarsUCase;
+			}
+
+			arrayAppend( refinedMembers, refinedMember );
+		}
+
+		var result = _getMailchimpAPIWrapperService().batchSubscribeUnsubscribeListMember(
+			  list_id         = arguments.listID
+			, members         = refinedMembers
+			, update_existing = arguments.updateExisting
 		);
 
 		var resultContent    = _processResult( result = result , logger = arguments.logger);
@@ -232,18 +212,24 @@ component singleton=true {
 			return false;
 		}
 
+		if ( canInfo ) {
+			arguments.logger.info( "Total new subscribed #( resultContent.total_created ?: 0 )#" );
+			arguments.logger.info( "Total updated #( resultContent.total_updated ?: 0 )#" );
+			arguments.logger.info( "Total error(s) #( resultContent.error_count ?: 0 )#" );
+		}
+
+		if ( canError && arraylen( resultContent.errors ?: [] ) ) {
+			arguments.logger.error( "#SerializeJson( resultContent.errors )#" );
+		}
+
 		return true;
+
 	}
 
-	/*
-	 * Description   : SET batch unsubscriber to list
-	 */
 	public boolean function setBatchUnsubscriber(
 		  required array   batch
 		, required any     listID
 		,          boolean deleteMember = false
-		,          boolean sendGoodbye  = false
-		,          boolean sendNotify   = false
 		,          any     logger
 	) {
 
@@ -251,25 +237,66 @@ component singleton=true {
 		var canInfo         = loggerAvailable && arguments.logger.canInfo();
 		var canError        = loggerAvailable && arguments.logger.canError();
 
-		var result          = _getMailchimpAPIWrapperService().listsBatchUnsubscribe(
-			  id               = arguments.listID
-			, batch            = arguments.batch
-			, delete_member    = arguments.deleteMember
-			, send_goodbye     = arguments.sendGoodbye
-			, send_notify      = arguments.sendNotify
-		);
+		if( !arguments.deleteMember ){
 
-		var resultContent    = _processResult( result = result , logger = arguments.logger);
+			var refinedMembers = [];
 
-		if( StructKeyExists(result,"errorDetail") && result.errorDetail != "" ){
-			if( canError ){
-				arguments.logger.error( "Error processing setBatchUnsubscriber method. Error [#SerializeJson(resultContent.error)#]" );
+			for( var member in arguments.batch ){
+				arrayAppend( refinedMembers, {
+					  status        = "unsubscribed"
+					, email_address = member.email.email
+				} );
 			}
 
-			return false;
-		}
+			var result = _getMailchimpAPIWrapperService().batchSubscribeUnsubscribeListMember(
+				  list_id         = arguments.listID
+				, members         = refinedMembers
+				, update_existing = true
+			);
 
-		return true;
+			var resultContent     = _processResult( result=result , logger=arguments.logger );
+
+			if( StructKeyExists( result,"errorDetail") && result.errorDetail != "" ){
+				if( canError ){
+					arguments.logger.error( "Error: [#SerializeJson(resultContent)#]" );
+				}
+				return false;
+			}
+
+			if ( canInfo ) {
+				arguments.logger.info( "Total new subscribed #( resultContent.total_created ?: 0 )#" );
+				arguments.logger.info( "Total updated #( resultContent.total_updated ?: 0 )#" );
+				arguments.logger.info( "Total error(s) #( resultContent.error_count ?: 0 )#" );
+			}
+
+			if ( canError && arraylen( resultContent.errors ?: [] ) ) {
+				arguments.logger.error( "#SerializeJson( resultContent.errors )#" );
+			}
+
+			return true;
+
+		} else {
+
+			for( var member in arguments.batch ){
+				var result = _getMailchimpAPIWrapperService().deleteListMember(
+					  list_id         = arguments.listID
+					, subscriber_hash = hash( member.email.email )
+				);
+				var resultContent = _processResult( result=result , logger=arguments.logger );
+
+				if( StructKeyExists( result,"errorDetail") && result.errorDetail != "" ){
+					if( canError ){
+						arguments.logger.error( "Error: [#SerializeJson(resultContent)#]" );
+					}
+				}
+
+				if ( canInfo && isEmpty( resultContent ) ) {
+					arguments.logger.info( "Removed #member.email.email# from mailchimp" );
+				}
+			}
+
+			return true;
+		}
 	}
 
 
@@ -311,6 +338,13 @@ component singleton=true {
 	}
 	private void function _setMailchimpAPIWrapperService( required any mailchimpAPIWrapperService ) {
 		_mailchimpAPIWrapperService = arguments.mailchimpAPIWrapperService;
+	}
+
+	private any function _getMailchimpService() {
+		return _mailchimpService;
+	}
+	private void function _setMailchimpService( required any mailchimpService ) {
+		_mailchimpService = arguments.mailchimpService;
 	}
 
 }

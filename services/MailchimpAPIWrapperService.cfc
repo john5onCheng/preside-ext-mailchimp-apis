@@ -1,4 +1,7 @@
-component singleton=true {
+/**
+* @singleton
+*/
+component {
 
 // CONSTRUCTOR
 	/**
@@ -15,6 +18,10 @@ component singleton=true {
 	}
 
 // PUBLIC API METHODS
+
+	// WARNING: 2.0 is deprecated. Please upgrade your method to 3.0.
+	// SEE MailchimpApiWrapperService3.cfc
+	// The response returned from 2.0 is vary from 3.0 this is why I keep this file for developer without modification
 
 	/*
 	 * Method Name   : lists/list
