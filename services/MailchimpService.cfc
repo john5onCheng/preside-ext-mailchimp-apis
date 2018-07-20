@@ -1,4 +1,9 @@
 /**
+*
+*  WARNING: 2.0 is deprecated. Please upgrade your method to 3.0.
+*  SEE MailchimpService3.cfc
+*  Will keep this file until year 2020 only
+*
 * @singleton
 */
 component  {

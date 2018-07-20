@@ -1,0 +1,25 @@
+{
+    "name":"PresideCMS Extension: Mailchimp API integration",
+    "type":"preside-extensions",
+    "version":"1.1.2",
+    "location":"https://github.com/john5oncheng/preside-ext-mailchimp-apis/archive/v1.1.2.zip",
+    "author":"Johnson Cheng",
+    "directory":"application/extensions",
+    "homepage":"https://github.com/john5oncheng/preside-ext-mailchimp-apis",
+    "documentation":"https://github.com/john5oncheng/preside-ext-mailchimp-apis/wiki",
+    "repository":{
+        "type":"git",
+        "URL":"https://github.com/john5oncheng/preside-ext-mailchimp-apis"
+    },
+    "bugs":"https://github.com/john5oncheng/preside-ext-mailchimp-apis/issues",
+    "slug":"preside-ext-mailchimp-apis",
+    "projectURL":"",
+    "ignore":[
+        ".git/*",
+        ".gitignore",
+        ".travis.yml",
+        ".twgit_features_subject",
+        "*.sh",
+        "docs"
+    ]
+}
