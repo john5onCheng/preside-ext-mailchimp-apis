@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<form>
-	<tab id="mailchimp" title="system-config.mailchimp:tab.title" description="system-config.mailchimp:tab.description">
+<form i18nBaseUri="system-config.mailchimp:">
+	<tab id="mailchimp">
 		<fieldset id="mailchimp">
-			<field name="api_key"               control="textinput"                            required="true"  label="system-config.mailchimp:api_key.label"               help="system-config.mailchimp:api_key.help"     />
+			<field name="api_key" control="textinput" required="true" />
 		</fieldset>
 	</tab>
 </form>
