@@ -69,7 +69,7 @@ component {
 		return false;
 	}
 
-	public array function getListMembers(
+	public struct function getListMembers(
 		  required string  listID
 		,          string  fields
 		,          string  exclude_fields
@@ -89,10 +89,10 @@ component {
 			if( canError ){
 				arguments.logger.error( "Error processing getListMembers method. Error [#SerializeJson( resultContent )#]" );
 			}
-			return [];
+			return {};
 		}
 
-		return resultContent.members ?: [];
+		return resultContent;
 	}
 
 	public struct function createNewInterestCategory(
@@ -170,13 +170,15 @@ component {
 	public array function getListCategories(
 		  required string  listID
 		,          string  fields
+		,          numeric count
+		,          numeric offset
 		,          any     logger
 	) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canError        = loggerAvailable && arguments.logger.canError();
 
-		var result          = _getMailchimpAPIWrapperService().getListCategories( list_id=arguments.listID, fields=arguments.fields );
+		var result          = _getMailchimpAPIWrapperService().getListCategories( list_id=arguments.listID, fields=arguments.fields, count=arguments.count, offset=arguments.offset );
 		var resultContent   = _processResult( result=result, logger=arguments.logger );
 
 		if( StructKeyExists( result, "errorDetail" ) && result.errorDetail != "" ){
@@ -193,13 +195,15 @@ component {
 		  required string  listID
 		, required string  interestCategoryId
 		,          string  fields
+		,          numeric count
+		,          numeric offset
 		,          any     logger
 	) {
 
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canError        = loggerAvailable && arguments.logger.canError();
 
-		var result          = _getMailchimpAPIWrapperService().getListInterestCategories( list_id=arguments.listID, interest_category_id=arguments.interestCategoryId, fields=arguments.fields );
+		var result          = _getMailchimpAPIWrapperService().getListInterestCategories( list_id=arguments.listID, interest_category_id=arguments.interestCategoryId, fields=arguments.fields, count=arguments.count, offset=arguments.offset );
 		var resultContent   = _processResult( result=result, logger=arguments.logger );
 
 		if( StructKeyExists( result, "errorDetail" ) && result.errorDetail != "" ){

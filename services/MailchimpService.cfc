@@ -35,7 +35,7 @@ component  {
 	}
 
 	public array function getMemberFromList( required string listID, string status,  any logger ) {
-		var members = _getMailchimpService().getListMembers( listID=arguments.listID, status=arguments.status, exclude_fields="members._links,members.list_id", logger=arguments.logger );
+		var members = _getMailchimpService().getListMembers( listID=arguments.listID, status=arguments.status, exclude_fields="members._links,members.list_id", logger=arguments.logger, count=99999 ).members;
 		if( arrayLen( members ) ) {
 			for( var member in members ){
 				member['email'] = member['email_address'] ?: "";
