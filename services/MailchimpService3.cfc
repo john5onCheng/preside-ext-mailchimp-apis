@@ -74,6 +74,7 @@ component {
 		,          string  fields
 		,          string  exclude_fields
 		,          string  status
+		,          string  unsubscribed_since
 		,          numeric count
 		,          numeric offset
 		,          any     logger
@@ -82,7 +83,7 @@ component {
 		var loggerAvailable = StructKeyExists( arguments, "logger" );
 		var canInfo         = loggerAvailable && arguments.logger.canInfo();
 		var canError        = loggerAvailable && arguments.logger.canError();
-		var result          = _getMailchimpAPIWrapperService().getListMembers( list_id=arguments.listID, fields=arguments.fields, exclude_fields=arguments.exclude_fields, status=arguments.status, count=arguments.count, offset=arguments.offset );
+		var result          = _getMailchimpAPIWrapperService().getListMembers( list_id=arguments.listID, fields=arguments.fields, exclude_fields=arguments.exclude_fields, status=arguments.status, count=arguments.count, offset=arguments.offset, unsubscribed_since=arguments.unsubscribed_since );
 		var resultContent   = _processResult( result=result, logger=arguments.logger);
 
 		if( StructKeyExists( result, "errorDetail" ) && result.errorDetail != "" ){
