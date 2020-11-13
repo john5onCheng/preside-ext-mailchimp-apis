@@ -171,11 +171,11 @@ component {
 	}
 
 	/*
-	 * Method Name   : POST /lists/{list_id}/members
-	 * Description   : Add a new member to the list.
+	 * Method Name   : POST /lists/{list_id}/members/{subscriber_hash}
+	 * Description   : Add or update member to the list.
 	 * Dcoumentation : http://developer.mailchimp.com/documentation/mailchimp/reference/lists/members/#create-post_lists_list_id_members
 	 */
-	public struct function addNewMemberToList(
+	public struct function addOrUpdateMemberToList(
 		  required string  list_id
 		, required string  email_address
 		,          string  status
@@ -189,11 +189,12 @@ component {
 		,          string  timestamp_signup
 		,          string  ip_opt
 		,          string  timestamp_opt
+		,          string  subscriber_hash
 	) {
-		var methodName = "/lists/#arguments.list_id#/members";
+		var methodName = "/lists/#arguments.list_id#/members/#arguments.subscriber_hash#";
 		structDelete( arguments, "list_id" );
 
-		return _call( uri=methodName, method="POST",  body=_convertArgumentsToJSON( arguments ) );
+		return _call( uri=methodName, method="PUT",  body=_convertArgumentsToJSON( arguments ) );
 	}
 
 	/*
