@@ -17,7 +17,7 @@ component {
 	public struct function getAllLists(
 		  string  fields
 		, string  exclude_fields
-		, numeric count
+		, numeric count = 200
 		, numeric offset
 		, string  before_date_created
 		, string  since_date_created
