@@ -1,5 +1,8 @@
 # Changelog
 
+## v1.1.6    
+Add default count to 200 
+
 ## v1.1.5
 Correction on addOrUpdateMemberToList method
 Add new param unsubscribed_since to getListMembers method
